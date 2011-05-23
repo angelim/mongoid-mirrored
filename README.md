@@ -30,61 +30,61 @@ Usage
 
 In your root(master) model:
 
-# Include the helper module
-include Mongoid::Mirrored
+	# Include the helper module
+	include Mongoid::Mirrored
 
-# Define wich fields and methods will be shared among root and embedded classes
-mirrored_in :articles, :users, :sync_direction => :both, :sync_events => :all do
-	field :contents, :type => String
-	field :vote_ratio, :type => Float
+	# Define wich fields and methods will be shared among root and embedded classes
+	mirrored_in :articles, :users, :sync_direction => :both, :sync_events => :all do
+		field :contents, :type => String
+		field :vote_ratio, :type => Float
 	
-	def calculate_vote_ratio
-		# do something with votes
+		def calculate_vote_ratio
+			# do something with votes
+		end
 	end
-end
     
 
 Example
 -------
 
-# The conventioned name for the mirrored class is "#{embedding_class}::{root_class}"
+	# The conventioned name for the mirrored class is "#{embedding_class}::{root_class}"
 
-class Post
-  embeds_many :comments, :class_name => "Post::Comment"
-end
-
-class User
-  embeds_many :comments, :class_name => "User::Comment"
-end
-
-# The Root Class should establish with which classes it is supposed to sync documents.
-# Everything declared within the block will be shared between the root and mirrored 
-# documents (eg. fields, instance methods, class methods)
-
-class Comment
-	mirrored_in :post, :user, :sync_direction => :both do
-		field :contents
-		field :vote_ratio, :type => Integer
+	class Post
+	  embeds_many :comments, :class_name => "Post::Comment"
 	end
-end
+
+	class User
+	  embeds_many :comments, :class_name => "User::Comment"
+	end
+
+	# The Root Class should establish with which classes it is supposed to sync documents.
+	# Everything declared within the block will be shared between the root and mirrored 
+	# documents (eg. fields, instance methods, class methods)
+
+	class Comment
+		mirrored_in :post, :user, :sync_direction => :both do
+			field :contents
+			field :vote_ratio, :type => Integer
+		end
+	end
  
-class Comment
-	mirrored_in :post, :sync_events => :create do
-		field :contents
-		field :vote_ratio, :type => Float
+	class Comment
+		mirrored_in :post, :sync_events => :create do
+			field :contents
+			field :vote_ratio, :type => Float
+		end
+		mirrored_in :user, :sync_events => [:create, :update] do
+			field :contents
+			field :vote_ratio, :type => Float
+		end
 	end
-	mirrored_in :user, :sync_events => [:create, :update] do
-		field :contents
-		field :vote_ratio, :type => Float
-	end
-end
 
 Options
 -------
 
-sync_events => :all(default), :create, :update, :destroy
-sync_direction => :both(default), :from_root, :from_mirror
-replicate_to_siblings => true(default)
+	sync_events => :all(default), :create, :update, :destroy
+	sync_direction => :both(default), :from_root, :from_mirror
+	replicate_to_siblings => true(default)
 
 
 Rake tasks
