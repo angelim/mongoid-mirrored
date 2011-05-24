@@ -41,19 +41,19 @@ Benchmark.bm do |bm|
   
   posts = Post.all.to_a
   
-  bm.report "creating comments from root collection" do
+  bm.report "creating 10000 comments in 200 posts from root collection" do
     10000.times do
       Comment.create(:post => rand_post(posts))
     end
   end
   
-  bm.report "updating comments from root collection" do
+  bm.report "updating 10000 comments from root collection" do
     Comment.all.each_with_index do |c,i|
       c.update_attribute(:contents, i)
     end
   end
   
-  bm.report "traversing posts with comments" do
+  bm.report "traversing posts with comments 10000 times" do
     10000.times do 
       p = rand_post(posts)
       p.comments.each do |c|
@@ -62,18 +62,18 @@ Benchmark.bm do |bm|
     end
   end
   
-  bm.report "deleting comments from root collection" do
+  bm.report "deleting 10000 comments from root collection" do
     Comment.all.map(&:destroy)
   end
   
-  bm.report "creating comments from embedding collection" do
+  bm.report "creating 10000 comments in 200 posts from embedding collection" do
     10000.times do
       p = rand_post(posts)
       p.comments.create
     end
   end
   
-  bm.report "updating comments from embedding collection" do
+  bm.report "updating 10000 comments from embedding collection" do
     posts.each do |p|
       p.comments.each_with_index do |c,i|
         c.update_attribute(:contents, i)
@@ -81,7 +81,7 @@ Benchmark.bm do |bm|
     end
   end
   
-  bm.report "deleting comments from embedding collection" do
+  bm.report "deleting 10000 comments from embedding collection" do
     posts.each do |p|
       p.comments.map(&:destroy)
     end
@@ -125,19 +125,19 @@ Benchmark.bm do |bm|
   
   posts = Post.all.to_a
   
-  bm.report "creating comments from root collection" do
+  bm.report "creating 10000 comments in 200 posts from root collection" do
     10000.times do
       Comment.create(:post => rand_post(posts))
     end
   end
   
-  bm.report "updating comments from root collection" do
+  bm.report "updating 10000 comments from root collection" do
     Comment.all.each_with_index do |c,i|
       c.update_attribute(:contents, i)
     end
   end
   
-  bm.report "traversing posts with comments" do
+  bm.report "traversing posts with comments 10000 times" do
     10000.times do 
       p = rand_post(posts)
       p.comments.each do |c|
@@ -146,18 +146,18 @@ Benchmark.bm do |bm|
     end
   end
   
-  bm.report "deleting comments from root collection" do
+  bm.report "deleting 10000 comments from root collection" do
     Comment.all.map(&:destroy)
   end
   
-  bm.report "creating comments from embedding collection" do
+  bm.report "creating 10000 comments in 200 posts from embedding collection" do
     10000.times do
       p = rand_post(posts)
       p.comments.create
     end
   end
   
-  bm.report "updating comments from embedding collection" do
+  bm.report "updating 10000 comments from embedding collection" do
     posts.each do |p|
       p.comments.each_with_index do |c,i|
         c.update_attribute(:contents, i)
@@ -165,7 +165,7 @@ Benchmark.bm do |bm|
     end
   end
   
-  bm.report "deleting comments from embedding collection" do
+  bm.report "deleting 10000 comments from embedding collection" do
     posts.each do |p|
       p.comments.map(&:destroy)
     end
