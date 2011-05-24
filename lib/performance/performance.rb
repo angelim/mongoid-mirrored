@@ -1,6 +1,5 @@
 require "benchmark"
 require "mongoid"
-require File.expand_path("../../config/initializers/mongoid_mirrored.rb", __FILE__)# require "mongoid_mirrored"
 
 def rand_post(posts)
   posts[rand(posts.size)]

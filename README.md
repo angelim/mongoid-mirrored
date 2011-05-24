@@ -18,11 +18,11 @@ Installation
 
 Add the gem to your Bundler `Gemfile`:
 
-    gem 'mongoid_mirrored'
+    gem 'mongoid-mirrored'
 
 Or install with RubyGems:
 
-    $ gem install mongoid_mirrored
+    $ gem install mongoid-mirrored
 
 
 Usage
