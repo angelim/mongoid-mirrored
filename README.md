@@ -67,26 +67,44 @@ Example
 			field :vote_ratio, :type => Integer
 		end
 	end
- 
-	class Comment
-		mirrored_in :post, :sync_events => :create do
-			field :contents
-			field :vote_ratio, :type => Float
-		end
-		mirrored_in :user, :sync_events => [:create, :update] do
-			field :contents
-			field :vote_ratio, :type => Float
-		end
-	end
 
 Options
 -------
+	
+	sync_events
+	-----------
+		:all(default) => sync master and mirrored documents on :after_create, :after_update and :after_destroy callbacks
+		:create => syncs only on :after_create
+		:update => syncs only on :after_update
+		:destroy => syncs only on :after_destroy
+	this options accepts an Array of events (eg: [:create, :destroy])	
+	
+	sync_direction
+	--------------
+	sync_direction
+		:both(default) => syncs documents on both directions. From master(root) to mirrors and from mirror to master
+		:from_root => syncs only from master to mirrors
+		:from_mirror => syncs only from mirror to master
+		
+	replicate_to_siblings
+	---------------------
+	true(default) => perform operations on the mirror's siblings 
+	(eg: article.comments.create(:user_id => user.id) will replicate the document on the User::Comment collection)
 
-	sync_events => :all(default), :create, :update, :destroy
-	sync_direction => :both(default), :from_root, :from_mirror
-	replicate_to_siblings => true(default)
-
-
+	inverse_of
+	----------
+	:one => 
+	:many(default)
+	
+	index
+	-----
+	false(default) => determines whether the root collection will create an index on the embedding collection's foreign_key
+	
+	index_background
+	----------------
+	false(default) => determines whether the aforementioned index will run on background
+	
+	
 Rake tasks
 ----------
 
@@ -96,7 +114,9 @@ should include tasks to re-sync
 Known issues
 ------------
 
-shuld include known issues
+- The helper does not support multiple calls of the mirrored_in method
+- Changing parents from the embedded association does not update target documents. Use the master collection to change associations.
+	- eg post.comments.first.update_attribute(:post_id => Post.create) does not include the comment in the new Post comments list
 
 Performance
 ------------
