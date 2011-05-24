@@ -65,6 +65,9 @@ Example
 		mirrored_in :post, :user, :sync_direction => :both do
 			field :contents
 			field :vote_ratio, :type => Integer
+			def	foo
+			 "bar"
+			end
 		end
 	end
 
@@ -81,7 +84,6 @@ Options
 	
 	sync_direction
 	--------------
-	sync_direction
 		:both(default) => syncs documents on both directions. From master(root) to mirrors and from mirror to master
 		:from_root => syncs only from master to mirrors
 		:from_mirror => syncs only from mirror to master

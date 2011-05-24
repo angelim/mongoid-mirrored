@@ -7,5 +7,9 @@ class Comment
     field :author
     field :contents
     field :like_count, :type => Integer, :default => 0
+    
+    def foo
+      "bar"
+    end
   end
 end

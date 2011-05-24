@@ -134,4 +134,13 @@ describe "Comment" do
     end
   end
   
+  context "shared methods between root and mirrored classes" do
+    it "should be able to call shared methods from the root collection" do
+      Comment.new.foo.should == "bar"
+    end
+    it "should be able to call shared methods from the mirrored collection" do
+      article.comments.new.foo.should == "bar"
+    end
+  end
+  
 end
