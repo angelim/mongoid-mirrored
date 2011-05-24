@@ -1,2 +1,2 @@
 require 'mongoid'
-require 'mongoid-mirrored/base'
+require 'mongoid-mirrored/mirrored_in'
