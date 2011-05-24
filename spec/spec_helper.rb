@@ -15,6 +15,7 @@ Mongoid.configure do |config|
   name = "mongoid-mirrored-test"
   host = "localhost"
   config.master = Mongo::Connection.new.db(name)
+  config.autocreate_indexes = true
 end
 
 Dir[ File.join(MODELS, "*.rb") ].sort.each { |file| require File.basename(file) }

@@ -1,4 +1,4 @@
-class CommentWithLessOptions
+class CommentWithLessOption
   include Mongoid::Document
   include Mongoid::Mirrored
   

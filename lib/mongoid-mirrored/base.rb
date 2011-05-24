@@ -63,7 +63,7 @@ module Mongoid
       # Define callbacks for mirror class that don't trigger callbacks on the root class
       def define_mirror_callbacks_for(_embedding_model, mirror_klass)
         if [:both, :from_mirror].include?(embedding_options[:sync_direction])
-          if ([:all, :create] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+          if embedding_options[:sync_events].include?(:create) || embedding_options[:sync_events] == [:all]
             mirror_klass.class_eval <<-EOF
               after_create  :_create_root
               def _create_root
@@ -72,7 +72,7 @@ module Mongoid
             EOF
           end
           
-          if ([:all, :update] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+          if embedding_options[:sync_events].include?(:update) || embedding_options[:sync_events] == [:all]
             mirror_klass.class_eval <<-EOF
               after_update  :_update_root
               def _update_root
@@ -81,7 +81,7 @@ module Mongoid
             EOF
           end
           
-          if ([:all, :destroy] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+          if embedding_options[:sync_events].include?(:destroy) || embedding_options[:sync_events] == [:all]
             mirror_klass.class_eval <<-EOF
               after_destroy  :_destroy_root
               def destroy_root
@@ -96,12 +96,21 @@ module Mongoid
         # mongoid macro embedded_in
         # eg: embedded_in :post, :inverse_of => :comments
         inverse_of = @root_klass.name.underscore
-        inverse_of.pluralize if embedding_options[:inverse_of] == :many
-
+        inverse_of = inverse_of.pluralize if embedding_options[:inverse_of] == :many
         
         mirror_klass.class_eval <<-EOT
           embedded_in :#{_embedding_model}, :inverse_of => :#{inverse_of}
         EOT
+      end
+      
+      def embedding_klass(embedding_sym)
+        begin
+          _embedding_klass = embedding_sym.to_s.classify.constantize 
+        rescue
+          Object.const_set embedding_sym.to_s.classify, Class.new 
+        ensure
+          _embedding_klass = embedding_sym.to_s.classify.constantize 
+        end
       end
       
       def mirrored_in(*args, &block)
@@ -119,12 +128,10 @@ module Mongoid
           
           define_mirror_callbacks_for(embedding_model, mirror_klass)
           embeds_mirror_in(embedding_model, mirror_klass)
-          
-          _embedding_model = embedding_model.to_s
-          embedding_klass = _embedding_model.classify.constantize
+          _embedding_klass = embedding_klass(embedding_model)
           
           # Creates the mirrored class Embedding::Root
-          embedding_klass.const_set self.name, mirror_klass
+          _embedding_klass.const_set self.name, mirror_klass
         end
       end
       
@@ -155,13 +162,13 @@ module Mongoid
           embedding_models.each do |embedding_model|
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
-            embedding_klass = embedding_string.classify.constantize
+            _embedding_klass = self.class.embedding_klass(embedding_model)
             embedding_instance = eval(embedding_string)
             
             # Only tries to create mirrored document if the embedding instance is given
             if embedding_instance
               # eg: Post.comments.create(attributes.merge!(:skip_callbacks => true).except(:post_id))
-              embedding_klass.collection.update({ :_id => embedding_instance.id }, '$push' => {root_association => attributes.except("#{embedding_string}_id")})
+              _embedding_klass.collection.update({ :_id => embedding_instance.id }, '$push' => {root_association => attributes.except("#{embedding_string}_id")})
             end
           end
         end
@@ -173,8 +180,9 @@ module Mongoid
             
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
-            embedding_klass = embedding_string.classify.constantize
+            # embedding_klass = embedding_string.classify.constantize
             embedding_instance = eval(embedding_string)
+            _embedding_klass = self.class.embedding_klass(embedding_model)
             
             if embedding_instance
               if eval("#{embedding_string}_id_changed?")
@@ -188,7 +196,7 @@ module Mongoid
                 attributes.except("#{embedding_string}_id").each_pair do |k,v|
                   nested_attr["#{root_association}.$.#{k}"] = v
                 end
-                embedding_klass.collection.update({"#{root_association}._id" => id}, '$set' => nested_attr )
+                _embedding_klass.collection.update({"#{root_association}._id" => id}, '$set' => nested_attr )
               end
             end
           end
@@ -200,11 +208,12 @@ module Mongoid
             
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
-            embedding_klass = embedding_string.classify.constantize
+            # embedding_klass = embedding_string.classify.constantize
+            _embedding_klass = self.class.embedding_klass(embedding_model)
             embedding_instance = eval(embedding_string)
             if embedding_instance
               id_to_destroy = changed_embedding_instance || embedding_instance.id
-              embedding_klass.collection.update({ :_id => id_to_destroy }, '$pull' => {root_association => { :_id => id}})
+              _embedding_klass.collection.update({ :_id => id_to_destroy }, '$pull' => {root_association => { :_id => id}})
             end
           end
         end

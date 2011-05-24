@@ -1,4 +1,4 @@
-class CommentWithOptions
+class CommentWithOption
   include Mongoid::Document
   include Mongoid::Mirrored
   
