@@ -140,7 +140,7 @@ Benchmark for mirrored documents
 	      user     system      total        real
 	creating 10000 comments in 200 posts from root collection 14.870000   0.450000  15.320000 ( 15.476777)
 	updating 10000 comments from root collection 25.590000   0.970000  26.560000 ( 36.910317)
-	**traversing posts with comments 10000 times  0.200000   0.000000   0.200000 (  0.211826)**
+	__traversing posts with comments 10000 times  0.200000   0.000000   0.200000 (  0.211826)__
 	deleting 10000 comments from root collection 17.880000   0.820000  18.700000 ( 21.626592)
 	creating 10000 comments in 200 posts from embedding collection  7.100000   0.340000   7.440000 (  8.562442)
 	updating 10000 comments from embedding collection  5.030000   0.300000   5.330000 (  6.058490)
