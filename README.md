@@ -126,25 +126,25 @@ I ran a [benchmark](https://github.com/angelim/mongoid-mirrored/blob/master/perf
 
 Benchmark for referenced documents
 
-      user     system      total        real
-creating 10000 comments in 200 posts from root collection  7.820000   0.250000   8.070000 (  8.252877)
-updating 10000 comments from root collection  5.080000   0.250000   5.330000 (  5.583467)
-**traversing posts with comments 10000 times  0.670000   0.010000   0.680000 (  0.772653)**
-deleting 10000 comments from root collection  2.710000   0.180000   2.890000 (  3.238750)
-creating 10000 comments in 200 posts from embedding collection  8.270000   0.210000   8.480000 (  8.530049)
-updating 10000 comments from embedding collection  9.830000   0.360000  10.190000 ( 10.761561)
-deleting 10000 comments from embedding collection  4.750000   0.240000   4.990000 (  5.217647)
+	      user     system      total        real
+	creating 10000 comments in 200 posts from root collection  7.820000   0.250000   8.070000 (  8.252877)
+	updating 10000 comments from root collection  5.080000   0.250000   5.330000 (  5.583467)
+	**traversing posts with comments 10000 times  0.670000   0.010000   0.680000 (  0.772653)**
+	deleting 10000 comments from root collection  2.710000   0.180000   2.890000 (  3.238750)
+	creating 10000 comments in 200 posts from embedding collection  8.270000   0.210000   8.480000 (  8.530049)
+	updating 10000 comments from embedding collection  9.830000   0.360000  10.190000 ( 10.761561)
+	deleting 10000 comments from embedding collection  4.750000   0.240000   4.990000 (  5.217647)
 
 Benchmark for mirrored documents
 
-      user     system      total        real
-creating 10000 comments in 200 posts from root collection 14.870000   0.450000  15.320000 ( 15.476777)
-updating 10000 comments from root collection 25.590000   0.970000  26.560000 ( 36.910317)
-**traversing posts with comments 10000 times  0.200000   0.000000   0.200000 (  0.211826)**
-deleting 10000 comments from root collection 17.880000   0.820000  18.700000 ( 21.626592)
-creating 10000 comments in 200 posts from embedding collection  7.100000   0.340000   7.440000 (  8.562442)
-updating 10000 comments from embedding collection  5.030000   0.300000   5.330000 (  6.058490)
-deleting 10000 comments from embedding collection  2.540000   0.130000   2.670000 (  2.733644)
+	      user     system      total        real
+	creating 10000 comments in 200 posts from root collection 14.870000   0.450000  15.320000 ( 15.476777)
+	updating 10000 comments from root collection 25.590000   0.970000  26.560000 ( 36.910317)
+	**traversing posts with comments 10000 times  0.200000   0.000000   0.200000 (  0.211826)**
+	deleting 10000 comments from root collection 17.880000   0.820000  18.700000 ( 21.626592)
+	creating 10000 comments in 200 posts from embedding collection  7.100000   0.340000   7.440000 (  8.562442)
+	updating 10000 comments from embedding collection  5.030000   0.300000   5.330000 (  6.058490)
+	deleting 10000 comments from embedding collection  2.540000   0.130000   2.670000 (  2.733644)
 
 Credits
 -------
