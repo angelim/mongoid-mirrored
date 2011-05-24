@@ -1,3 +1,5 @@
+# test methods
+# test from_mirror
 require 'spec_helper'
 
 describe "Comment" do

@@ -1,11 +1,8 @@
-# colocar o id dos siblings nos mirrors
+# tirar callbacks desta definicao
 module Mongoid
   module Mirrored
     def self.included(base)
       base.send(:extend, ClassMethods)
-      base.after_create    :create_mirror
-      base.before_update   :update_mirror  
-      base.before_destroy  :destroy_mirror
       base.send :cattr_accessor, :embedding_models
       base.send :cattr_accessor, :embedding_options
     end
@@ -206,22 +203,30 @@ module Mongoid
         end
       end
       
-      # writes the block passed to the mirrored_in method in the Root Calss
-      # defines instance methods used in callbacks triggered by the root documents
-      def write_fields_with_options(&block)
-        index_params = ""
-        index_params << ", :index => true" if embedding_options[:index]
-        index_params << ", :background => true" if embedding_options[:index] && embedding_options[:background_index]
-        
-        embedding_models.each do |embedding_model|
-          self.class_eval <<-EOT
-            belongs_to :#{embedding_model} #{index_params}
-          EOT
+      # Define callbacks for root class that don't trigger callbacks on the mirror classes
+      def define_root_callbacks
+        if [:both, :from_root].include?(embedding_options[:sync_direction])
+          if embedding_options[:sync_events].include?(:create) || embedding_options[:sync_events] == [:all]
+            define_create_mirrors
+          end
+          
+          if embedding_options[:sync_events].include?(:update) || embedding_options[:sync_events] == [:all]
+            define_update_mirrors
+          end
+          
+          if embedding_options[:sync_events].include?(:destroy) || embedding_options[:sync_events] == [:all]
+            define_destroy_mirrors
+          end
         end
-        yield
-        
-        # Defining callbacks for the root document
-        define_method :create_mirror do
+      end
+      
+      def define_create_mirrors
+        unless self.instance_methods.include?(:_create_mirrors)
+          self.class_eval <<-EOF
+            after_create  :_create_mirrors
+          EOF
+        end
+        define_method :_create_mirrors do
           
           # each embedded class will be touched by the callbacks
           # this should be used with care or write operations could get very slow
@@ -237,10 +242,18 @@ module Mongoid
             end
           end
         end
+      end
+      
+      def define_update_mirrors
+        unless self.instance_methods.include?(:_update_mirrors)
+          self.class_eval <<-EOF
+            before_update  :_update_mirrors
+          EOF
+        end
         # updates the mirrored document when one or more attributes of the parent document is changed
         # if the root document changes the embedding document, the mirrored document is deleted from the previous list
         # and another mirrored document is created for the new embedding document
-        define_method :update_mirror do
+        define_method :_update_mirrors do
           embedding_models.each do |embedding_model|
             
             # attributes that will be used to define the root and embedding classes and instances
@@ -250,8 +263,8 @@ module Mongoid
             
             if embedding_instance
               if eval("#{embedding_string}_id_changed?")
-                create_mirror
-                destroy_mirror(eval("#{embedding_string}_id_was"))
+                _create_mirrors
+                _destroy_mirrors(eval("#{embedding_string}_id_was"))
               else
                 # using positional modifier $ to find embedded document to be updated
                 # traverses the attributes hash to inject positional modifier
@@ -265,9 +278,17 @@ module Mongoid
             end
           end
         end
+      end
+      
+      def define_destroy_mirrors
+        unless self.instance_methods.include?(:_destroy_mirrors)
+          self.class_eval <<-EOF
+            after_destroy  :_destroy_mirrors
+          EOF
+        end
         # destroys the mirrored document when the destroy method is called on the root document
         # or when the root document establishes a relationship with another embedding document
-        define_method :destroy_mirror do |changed_embedding_instance = nil|
+        define_method :_destroy_mirrors do |changed_embedding_instance = nil|
           embedding_models.each do |embedding_model|
             
             # attributes that will be used to define the root and embedding classes and instances
@@ -280,6 +301,25 @@ module Mongoid
             end
           end
         end
+      end
+      
+      # writes the block passed to the mirrored_in method in the Root Calss
+      # defines instance methods used in callbacks triggered by the root documents
+      def write_fields_with_options(&block)
+        index_params = ""
+        index_params << ", :index => true" if embedding_options[:index]
+        index_params << ", :background => true" if embedding_options[:index] && embedding_options[:background_index]
+        
+        embedding_models.each do |embedding_model|
+          self.class_eval <<-EOT
+            belongs_to :#{embedding_model} #{index_params}
+          EOT
+        end
+        # writes shared fields and methods to root document
+        yield
+        
+        define_root_callbacks
+        
       end
     end
   end
