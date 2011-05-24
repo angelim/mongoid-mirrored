@@ -62,6 +62,11 @@ Benchmark.bm do |bm|
     end
   end
   
+  bm.report "finding posts from the 1000 newest comments" do
+    titles = []
+    Comment.where(:contents.gt => 9000).each{|c| titles << c.post.title}
+  end
+  
   bm.report "deleting 10000 comments from root collection" do
     Comment.all.map(&:destroy)
   end
@@ -144,6 +149,11 @@ Benchmark.bm do |bm|
         (con ||= []) << c.contents
       end
     end
+  end
+  
+  bm.report "finding posts from the 1000 newest comments" do
+    titles = []
+    Post.where(:"comments.contents".gt => 9000).each{|p| titles << p.title}
   end
   
   bm.report "deleting 10000 comments from root collection" do
