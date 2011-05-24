@@ -1,13 +1,4 @@
-# qdo um mirror mudar, avisar o root para atualizar outros filhos
-# dar opcao de nao atualizar mais no futuro
-# processar varias chamadas do mirrored_in
-# ter callbacks para cada modelo embedado
-# indexes opcionais
-# sync_events => :all(default), :create, :update, :destroy
-# sync_direction => :both(default), :from_root, :from_mirror
-# replicate_to_siblings => true(default)
-# inverse_of => :posts
-
+# colocar o id dos siblings nos mirrors
 module Mongoid
   module Mirrored
     def self.included(base)
@@ -20,31 +11,6 @@ module Mongoid
     end
     
     module ClassMethods
-      # Class method that creates the mirrored model
-      # the Embedding Class should define a relation to the Root Class
-      # using the convention name for the mirrored document "#{embedding_class}::{root_class}"
-      #   class Post
-      #     embeds_many :comments, :class_name => "Post::Comment"
-      #   end
-      # 
-      #   class User
-      #     embeds_many :comments, :class_name => "User::Comment"
-      #   end
-      # 
-      # The Root Class should establish with which classes it is supposed to sync documents
-      # and whether the belongs_to macro should be called.
-      # Everything declared within the block will be shared between the root and all mirrored 
-      # documents (eg. fields, instance methods, class methods)
-      #   class Comment
-      #    mirrored_in :post, :user, :inverse_of => :posts, :sync_events => :all do
-      #      field :contents
-      #      field :counter, :type => Integer
-      #    end
-      #   end
-      #  
-      # all operations on either side(root or mirrored) will be synched
-      
-
       def extract_options(*args)
         options = args.extract_options!
         self.embedding_models = args
@@ -84,7 +50,7 @@ module Mongoid
           if embedding_options[:sync_events].include?(:destroy) || embedding_options[:sync_events] == [:all]
             mirror_klass.class_eval <<-EOF
               after_destroy  :_destroy_root
-              def destroy_root
+              def _destroy_root
                 #{@root_klass}.collection.remove({ :_id => id })
               end
             EOF
