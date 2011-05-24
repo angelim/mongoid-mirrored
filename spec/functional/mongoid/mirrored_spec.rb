@@ -50,9 +50,9 @@ describe "Mongoid::Mirrored" do
       mirror.reflect_on_association(:article).macro.should == :embedded_in
     end
     it "should define callbacks if sync strategy is ..." do
-      mirror._create_callbacks.map(&:filter).should include :create_root
-      mirror._update_callbacks.map(&:filter).should include :update_root
-      mirror._destroy_callbacks.map(&:filter).should include :destroy_root
+      mirror._create_callbacks.map(&:filter).should include :_create_root
+      mirror._update_callbacks.map(&:filter).should include :_update_root
+      mirror._destroy_callbacks.map(&:filter).should include :_destroy_root
     end
   end
 end

@@ -2,6 +2,12 @@
 # dar opcao de nao atualizar mais no futuro
 # processar varias chamadas do mirrored_in
 # ter callbacks para cada modelo embedado
+# indexes opcionais
+# sync_events => :all(default), :create, :update, :destroy
+# sync_direction => :both(default), :from_root, :from_mirror
+# replicate_to_siblings => true(default)
+# inverse_of => :posts
+
 module Mongoid
   module Mirrored
     def self.included(base)
@@ -9,6 +15,8 @@ module Mongoid
       base.after_create    :create_mirror
       base.before_update   :update_mirror  
       base.before_destroy  :destroy_mirror
+      base.send :cattr_accessor, :embedding_models
+      base.send :cattr_accessor, :embedding_options
     end
     
     module ClassMethods
@@ -28,59 +36,91 @@ module Mongoid
       # Everything declared within the block will be shared between the root and all mirrored 
       # documents (eg. fields, instance methods, class methods)
       #   class Comment
-      #    mirrored_in :post, :user, :belongs => true do
+      #    mirrored_in :post, :user, :inverse_of => :posts, :sync_events => :all do
       #      field :contents
       #      field :counter, :type => Integer
       #    end
       #   end
       #  
       # all operations on either side(root or mirrored) will be synched
+      
 
-      def mirrored_in(*embedding_models, &block)
-        write_fields_with_options(*embedding_models){ yield }
+      def extract_options(*args)
+        options = args.extract_options!
+        self.embedding_models = args
+        self.embedding_options = options
         
-        # split embedding_models from options
-        embedding_models.pop
+        # set defaults
+        self.embedding_options[:sync_events] ||= :all
+        self.embedding_options[:sync_events] = [self.embedding_options[:sync_events]] unless embedding_options[:sync_events].is_a? Array
+        self.embedding_options[:sync_direction] ||= :both
+        self.embedding_options[:replicate_to_siblings] = true if self.embedding_options[:replicate_to_siblings].nil?
+        self.embedding_options[:inverse_of] ||= :many
+        self.embedding_options[:index] = false if self.embedding_options[:index].nil?
+        self.embedding_options[:background_index] = false if self.embedding_options[:background_index].nil?
+      end
+      
+      # Define callbacks for mirror class that don't trigger callbacks on the root class
+      def define_mirror_callbacks_for(_embedding_model, mirror_klass)
+        if [:both, :from_mirror].include?(embedding_options[:sync_direction])
+          if ([:all, :create] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+            mirror_klass.class_eval <<-EOF
+              after_create  :_create_root
+              def _create_root
+                #{@root_klass}.collection.insert(attributes.merge(:#{_embedding_model}_id => #{_embedding_model}.id))
+              end
+            EOF
+          end
+          
+          if ([:all, :update] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+            mirror_klass.class_eval <<-EOF
+              after_update  :_update_root
+              def _update_root
+                #{@root_klass}.collection.update({ :_id => id }, '$set' => attributes.except('_id'))
+              end
+            EOF
+          end
+          
+          if ([:all, :destroy] & embedding_options[:sync_events]).size == embedding_options[:sync_events].size
+            mirror_klass.class_eval <<-EOF
+              after_destroy  :_destroy_root
+              def destroy_root
+                #{@root_klass}.collection.remove({ :_id => id })
+              end
+            EOF
+          end
+        end
+      end
+      
+      def embeds_mirror_in(_embedding_model, mirror_klass)
+        # mongoid macro embedded_in
+        # eg: embedded_in :post, :inverse_of => :comments
+        inverse_of = @root_klass.name.underscore
+        inverse_of.pluralize if embedding_options[:inverse_of] == :many
+
         
+        mirror_klass.class_eval <<-EOT
+          embedded_in :#{_embedding_model}, :inverse_of => :#{inverse_of}
+        EOT
+      end
+      
+      def mirrored_in(*args, &block)
+        extract_options(*args)
+        write_fields_with_options { yield }
+        @root_klass = self
         # creates a Mirrored class for each embedding model
         embedding_models.each do |embedding_model|
           mirror_klass = Class.new do
             include Mongoid::Document
+            
             # includes all fields and methods declared when calling mirrored_in
             class_eval &block
           end
           
-          root_klass = self
+          define_mirror_callbacks_for(embedding_model, mirror_klass)
+          embeds_mirror_in(embedding_model, mirror_klass)
+          
           _embedding_model = embedding_model.to_s
-          
-          mirror_klass.class_eval <<-EOT
-            # callbacks that should be triggered when updating de mirrored documents
-            after_create  :create_root
-            after_update  :update_root    
-            after_destroy :destroy_root   
-
-            # mongoid macro embedded_in
-            # eg: embedded_in :post, :inverse_of => :comments
-            embedded_in :#{embedding_model}, :inverse_of => #{root_klass}.name.downcase.pluralize
-            
-            # creates the document in the root class without triggering callbacks
-            def create_root
-              #{root_klass}.collection.insert(attributes.merge(:#{embedding_model}_id => #{embedding_model}.id))
-            end
-            
-            # updates the root class document without triggering callbacks
-            def update_root
-              #{root_klass}.collection.update({ :_id => id }, '$set' => attributes.except('_id'))
-            end
-            
-            # destroy the root class document without triggering callbacks
-            def destroy_root
-              #{root_klass}.collection.remove({ :_id => id })
-            end
-          EOT
-          
-          # defines the mirrored class name as a composition of the Embedded and Root Classes
-          # this name is a convention and could be given as an argument to the mirrored_in method
           embedding_klass = _embedding_model.classify.constantize
           
           # Creates the mirrored class Embedding::Root
@@ -90,10 +130,15 @@ module Mongoid
       
       # writes the block passed to the mirrored_in method in the Root Calss
       # defines instance methods used in callbacks triggered by the root documents
-      def write_fields_with_options(*embedding_models, &block)
-        options = embedding_models.pop
+      def write_fields_with_options(&block)
+        index_params = ""
+        index_params << ", :index => true" if embedding_options[:index]
+        index_params << ", :background => true" if embedding_options[:index] && embedding_options[:background_index]
+        
         embedding_models.each do |embedding_model|
-          belongs_to embedding_model
+          self.class_eval <<-EOT
+            belongs_to :#{embedding_model} #{index_params}
+          EOT
         end
         yield
         
