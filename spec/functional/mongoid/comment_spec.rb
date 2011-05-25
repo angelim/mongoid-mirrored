@@ -61,6 +61,9 @@ describe "Comment" do
         c = article.comments.create(:contents => "embedding", :author => "embedding_author")
         Comment.first.update_attributes(:article_id =>  Article.create.id, :user_id => User.create.id)
         article.reload
+        # puts article.inspect
+        # puts article.comments.inspect
+        # puts Comment.all.to_a.inspect
         article.comments.should be_empty
         user.reload
         user.comments.should be_empty
@@ -99,7 +102,7 @@ describe "Comment" do
     it "should destroy document in root collection" do
       c  = Comment.create(:article => article, :user => user, :contents => "root", :author => "root_author" )
       c.destroy
-      Comment.where(:content => "root").should be_empty
+      Comment.where(:contents => "root").should be_empty
     end
     
     it "should destroy similar document in each embedding collection" do
@@ -116,14 +119,14 @@ describe "Comment" do
     it "should destroy document in root collection" do
       c = article.comments.create(:contents => "embedding", :author => "embedding_author")
       c.destroy
-      Comment.where(:content => "embedding").should be_empty
+      Comment.where(:contents => "embedding").should be_empty
     end
     
     it "should destroy similar document from embedding collection" do
       c = article.comments.create(:contents => "embedding", :author => "embedding_author")
       c.destroy
       article.reload
-      article.comments.where(:content => "embedding").should be_empty
+      article.comments.where(:contents => "embedding").should be_empty
     end
     
     it "should destroy document from sibling collections" do

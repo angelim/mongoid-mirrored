@@ -122,7 +122,7 @@ Known issues
 
 Performance
 ------------
-I ran a [benchmark](https://github.com/angelim/mongoid-mirrored/blob/master/perf/benchmark.rb) in my computer with the following results
+I ran a [benchmark](https://github.com/angelim/mongoid-mirrored/blob/master/perf/benchmark.rb) on my computer with the following results
 
 Benchmark for referenced documents
 

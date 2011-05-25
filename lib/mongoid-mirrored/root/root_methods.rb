@@ -28,10 +28,10 @@ module Mongoid
     
           # each embedded class will be touched by the callbacks
           # this should be used with care or write operations could get very slow
-          embedding_models.each do |embedding_model|
+          embedding_models[:all].each do |embedding_model|
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
-            _embedding_klass = self.class.embedding_klass(embedding_model)
+            _embedding_klass = self.class.symbol_to_class(embedding_model)
             embedding_instance = eval(embedding_string)
       
             # Only tries to create mirrored document if the embedding instance is given
@@ -52,12 +52,12 @@ module Mongoid
         # if the root document changes the embedding document, the mirrored document is deleted from the previous list
         # and another mirrored document is created for the new embedding document
         define_method :_update_mirrors do
-          embedding_models.each do |embedding_model|
+          embedding_models[:all].each do |embedding_model|
       
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
             embedding_instance = eval(embedding_string)
-            _embedding_klass = self.class.embedding_klass(embedding_model)
+            _embedding_klass = self.class.symbol_to_class(embedding_model)
       
             if embedding_instance
               if eval("#{embedding_string}_id_changed?")
@@ -87,11 +87,11 @@ module Mongoid
         # destroys the mirrored document when the destroy method is called on the root document
         # or when the root document establishes a relationship with another embedding document
         define_method :_destroy_mirrors do |changed_embedding_instance = nil|
-          embedding_models.each do |embedding_model|
+          embedding_models[:all].each do |embedding_model|
       
             # attributes that will be used to define the root and embedding classes and instances
             embedding_string = embedding_model.to_s
-            _embedding_klass = self.class.embedding_klass(embedding_model)
+            _embedding_klass = self.class.symbol_to_class(embedding_model)
             embedding_instance = eval(embedding_string)
             if embedding_instance
               id_to_destroy = changed_embedding_instance || embedding_instance.id
@@ -108,7 +108,7 @@ module Mongoid
         index_params << ", :index => true" if embedding_options[:index]
         index_params << ", :background => true" if embedding_options[:index] && embedding_options[:background_index]
   
-        embedding_models.each do |embedding_model|
+        embedding_models[:all].each do |embedding_model|
           self.class_eval <<-EOT
             belongs_to :#{embedding_model} #{index_params}
           EOT

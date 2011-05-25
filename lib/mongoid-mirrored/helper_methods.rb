@@ -3,7 +3,7 @@ module Mongoid
     module HelperMethods
       def extract_options(*args)
         options = args.extract_options!
-        self.embedding_models = args
+        self.embedding_models = {:all => args, :current => nil}
         self.embedding_options = options
         
         # set defaults
@@ -24,13 +24,13 @@ module Mongoid
         inverse_of
       end
       
-      def embedding_klass(embedding_sym)
+      def symbol_to_class(symbol)
         begin
-          _embedding_klass = embedding_sym.to_s.classify.constantize 
+          symbol.to_s.classify.constantize 
         rescue
-          Object.const_set embedding_sym.to_s.classify, Class.new 
+          Object.const_set symbol.to_s.classify, Class.new 
         ensure
-          _embedding_klass = embedding_sym.to_s.classify.constantize 
+          symbol.to_s.classify.constantize 
         end
       end
     end
